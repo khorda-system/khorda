@@ -129,6 +129,7 @@
     th:first-child,td:first-child{position:static;box-shadow:none}
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -167,6 +168,7 @@
     <section class="view active" id="v-home">
       <div class="toolbar">
         <input type="search" id="search" placeholder="ابحث باسم الحساب…" oninput="renderHome()">
+        <button class="btn ghost" onclick="exportExcel(null)" title="تصدير كل الحسابات">⬇ Excel</button>
         <button class="btn" onclick="openNewAccount()">+ حساب جديد</button>
       </div>
       <div class="card"><div class="bd" id="accList" style="padding:4px 14px"></div></div>
@@ -177,6 +179,7 @@
       <div class="ledger-head">
         <button class="back" onclick="goHome()">→ الحسابات</button>
         <h2><span id="ledName"></span></h2>
+        <button class="btn ghost" onclick="exportExcel(curAcc)">⬇ Excel</button>
         <button class="btn ghost" onclick="window.print()">🖨 طباعة</button>
         <button class="btn ghost" onclick="openRenameAccount()">✎</button>
         <button class="btn" onclick="openRow(null)">+ سطر جديد</button>
@@ -409,6 +412,38 @@ function renderLedger(){
   const s=accSummary(curAcc);
   const tot=`<tr class="total"><td>الإجمالي</td><td></td><td></td><td></td><td>${fW(s.weight)}</td><td></td><td>${fW(s.kg)}</td><td></td><td>${fM(s.total)}</td><td></td><td>${fM(s.after)}</td><td>${fM(s.paid)}</td><td>${fM(s.bal)}</td></tr>`;
   document.getElementById('ledTable').innerHTML=head+'<tbody>'+(rows.length?body:'<tr><td colspan="13" class="empty">لسه مفيش سطور في الحساب ده — اضغط «+ سطر جديد»</td></tr>')+tot+'</tbody>';
+}
+
+
+/* ---------- Excel export ---------- */
+function safeSheetName(n,used){let s=String(n||'حساب').replace(/[\[\]\:\*\?\/\\]/g,' ').trim().slice(0,28)||'حساب';let b=s,i=2;while(used.has(s)){s=b.slice(0,25)+' '+i++;}used.add(s);return s;}
+function ledgerAOA(a){
+  const H=['التاريخ','السيارة','قائم','فارغ','وزن','خصم','وزن صافي','السعر','الإجمالي','تعتيق','بعد التعتيق','واصل','باقي'];
+  const rows=[[a.name],H];let bal=0;const n=v=>(+v||0)||null;
+  accEntries(a.id).forEach(e=>{bal+=(+e.after||0)-(+e.paid||0);const isPay=!(+e.weight>0);
+    rows.push([fDate(e.date),isPay?'واصل':(e.car||''),n(e.gross),n(e.tare),n(e.weight),n(e.deduct),n(e.net),isPay?null:n(e.price),isPay?0:(+e.total||0),n(e.taateeq),isPay?0:(+e.after||0),n(e.paid),Math.round(bal*100)/100]);});
+  const s=accSummary(a.id);
+  rows.push(['الإجمالي','','','',s.weight,'',s.kg,'',s.total,'',s.after,s.paid,Math.round(s.bal*100)/100]);
+  return rows;
+}
+function exportExcel(accId){
+  if(typeof XLSX==='undefined'){toast('مكتبة Excel محمّلتش — تأكد من النت');return;}
+  const list=accId?accounts.filter(a=>a.id===accId):[...accounts].sort((x,y)=>(x.name||'').localeCompare(y.name||'','ar'));
+  if(!list.length){toast('مفيش حسابات للتصدير');return;}
+  const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};const used=new Set();
+  if(!accId){
+    const sum=[['الحساب','عدد السطور','إجمالي الوزن الصافي','إجمالي بعد التعتيق','إجمالي الواصل','الباقي']];
+    let tb=0;list.forEach(a=>{const s=accSummary(a.id);tb+=s.bal;sum.push([a.name,accEntries(a.id).length,s.kg,s.after,s.paid,Math.round(s.bal*100)/100]);});
+    sum.push(['الإجمالي','','','','',Math.round(tb*100)/100]);
+    const ws=XLSX.utils.aoa_to_sheet(sum);ws['!cols']=[{wch:22},{wch:12},{wch:18},{wch:18},{wch:16},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ws,safeSheetName('الملخص',used));
+  }
+  list.forEach(a=>{const ws=XLSX.utils.aoa_to_sheet(ledgerAOA(a));
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:12}}];
+    ws['!cols']=[{wch:12},{wch:9},{wch:8},{wch:8},{wch:8},{wch:7},{wch:10},{wch:7},{wch:12},{wch:8},{wch:13},{wch:11},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,safeSheetName(a.name,used));});
+  const fname=(accId?('كشف-'+(list[0].name||'حساب')):'كشوف-الخردة')+'-'+todayStr()+'.xlsx';
+  XLSX.writeFile(wb,fname);toast('اتصدّر ملف Excel ✓');
 }
 
 /* ---------- navigation ---------- */
