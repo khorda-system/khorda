@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>كشوف حسابات الخردة</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="الخردة">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1f4d5c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -113,11 +121,11 @@
   .g6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
   .g6 input{padding:9px 6px;font-size:.9rem;text-align:center}
   .g6 label{font-size:.68rem;text-align:center}
-  .mode{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;margin-bottom:12px}
+  .mode{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;margin-bottom:12px}
   .mode button{flex:1;border:0;background:none;padding:10px 4px;border-radius:9px;font-family:inherit;font-weight:700;color:var(--ink-2);cursor:pointer;font-size:.92rem}
   .mode button.on{background:var(--brand);color:#fff}
   .grp-load,.grp-pay,.grp-credit{display:none}
-  .sheet[data-mode="load"] .grp-load,.sheet[data-mode="load"] .grp-pay,.sheet[data-mode="pay"] .grp-pay,.sheet[data-mode="credit"] .grp-credit{display:block}
+  .sheet[data-mode="load"] .grp-load,.sheet[data-mode="load"] .grp-pay,.sheet[data-mode="pay"] .grp-pay,.sheet[data-mode="credit"] .grp-credit,.sheet[data-mode="repay"] .grp-credit{display:block}
   .sheet[data-mode="load"] .g2.grp-load,.sheet[data-mode="load"] .g3.grp-load,.sheet[data-mode="load"] .g6.grp-load,.sheet[data-mode="load"] .g3.grp-pay,.sheet[data-mode="pay"] .g3.grp-pay{display:grid}
   .sec{font-size:.8rem;font-weight:700;color:var(--brand);margin:10px 0 6px;border-top:1px solid var(--line);padding-top:10px}
   .calcbox{background:var(--surface-2);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:6px 0 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
@@ -207,6 +215,7 @@
     <div class="mode" id="modeSeg">
       <button data-m="load" class="on" onclick="setMode('load')">🚛 نقلة</button>
       <button data-m="pay" onclick="setMode('pay')">💸 خد فلوس</button>
+      <button data-m="repay" onclick="setMode('repay')">💰 دفع لنا (سداد)</button>
       <button data-m="credit" onclick="setMode('credit')">➕ ليه فلوس</button>
     </div>
     <div class="g2">
@@ -214,7 +223,7 @@
       <div class="field grp-load"><label>السيارة</label><input type="text" inputmode="numeric" id="f-car" placeholder="رقم العربية"></div>
     </div>
     <div class="grp-credit">
-      <div class="field"><label>المبلغ اللي ليه (ج.م)</label><input type="number" inputmode="decimal" id="f-credit" placeholder="0" oninput="calcRow()"></div>
+      <div class="field"><label id="creditLabel">المبلغ اللي ليه (ج.م)</label><input type="number" inputmode="decimal" id="f-credit" placeholder="0" oninput="calcRow()"></div>
     </div>
     <div class="g3 grp-load">
       <div class="field"><label>قائم <span style="font-weight:400">(اختياري)</span></label><input type="number" inputmode="decimal" id="f-gross" placeholder="0" oninput="onWeights()"></div>
@@ -370,7 +379,7 @@ function renderLedger(){
   const head=`<thead><tr><th rowspan="2">التاريخ</th><th rowspan="2">السيارة</th><th rowspan="2">الوزن</th><th rowspan="2">السعر</th><th colspan="6" class="grp">التقدير</th><th rowspan="2">تعتيق</th><th rowspan="2">شيكات</th><th rowspan="2">نقدي</th><th rowspan="2">ملاحظات</th><th rowspan="2">البيان</th><th rowspan="2">قيمة النقلة</th><th rowspan="2">الباقي له</th></tr><tr>${GRADES.map(g=>`<th class="grp">${g[1]}</th>`).join('')}</tr></thead>`;
   const c=v=>(+v?fW(v):'');
   const body=rows.map(e=>{const g=e.grades||{};const isPay=!(+e.weight>0);
-    return `<tr onclick="openRow('${e.id}')"><td>${fDateAr(e.date)}</td><td>${esc(e.car||'')}</td><td>${c(e.weight)}</td><td>${isPay?'':fN(e.price,2)}</td>${GRADES.map(x=>`<td>${c(g[x[0]])}</td>`).join('')}<td>${+e.taateeq?fN(e.taateeq):''}</td><td>${+e.cheque?fN(e.cheque):''}</td><td>${+e.cash?fN(e.cash):''}</td><td class="txt">${esc(e.notes||'')}</td><td class="c txt">${e.kind==='credit'?esc(e.bayan||'له'):(isPay?'0':esc(e.bayan||''))}</td><td class="c">${fN(e.value)}</td><td class="c">${fN(netOf(e))}</td></tr>`;}).join('');
+    return `<tr onclick="openRow('${e.id}')"><td>${fDateAr(e.date)}</td><td>${esc(e.car||'')}</td><td>${c(e.weight)}</td><td>${isPay?'':fN(e.price,2)}</td>${GRADES.map(x=>`<td>${c(g[x[0]])}</td>`).join('')}<td>${+e.taateeq?fN(e.taateeq):''}</td><td>${+e.cheque?fN(e.cheque):''}</td><td>${+e.cash?fN(e.cash):''}</td><td class="txt">${esc(e.notes||'')}</td><td class="c txt">${(e.kind==='credit'||e.kind==='repay')?esc(e.bayan||(e.kind==='repay'?'سداد':'له')):(isPay?'0':esc(e.bayan||''))}</td><td class="c">${fN(e.value)}</td><td class="c">${fN(netOf(e))}</td></tr>`;}).join('');
   const tot=`<tr class="total"><td>الإجمالي</td><td></td><td>${fW(s.kg)}</td><td></td><td colspan="6"></td><td>${fN(s.taateeq)}</td><td>${fN(s.cheque)}</td><td>${fN(s.cash)}</td><td></td><td></td><td>${fN(s.value)}</td><td>${fN(s.net)}</td></tr>`;
   F('ledTable').innerHTML=head+'<tbody>'+(rows.length?body:'<tr><td colspan="17" class="empty">لسه مفيش سطور — اضغط «+ سطر جديد»</td></tr>')+tot+'</tbody>';
 }
@@ -404,11 +413,11 @@ function goHome(){curAcc=null;show('home');}
 
 /* ---------- row editor ---------- */
 function onWeights(){const g=+F('f-gross').value||0,t=+F('f-tare').value||0;if(g>0)F('f-weight').value=Math.max(g-t,0);calcRow();}
-function setMode(m){rowMode=m;F('rowSheet').dataset.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));F('c-vlabel').textContent=m==='credit'?'المبلغ له':'قيمة النقلة';calcRow();}
+function setMode(m){rowMode=m;F('rowSheet').dataset.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));F('c-vlabel').textContent=m==='credit'?'المبلغ له':(m==='repay'?'المبلغ المسدّد':'قيمة النقلة');F('creditLabel').textContent=m==='repay'?'المبلغ اللي دفعه لنا (ج.م)':'المبلغ اللي ليه (ج.م)';calcRow();}
 function calcRow(){let value=0,paid=0;
   if(rowMode==='load'){value=r2((+F('f-weight').value||0)*(+F('f-price').value||0));paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
   else if(rowMode==='pay'){paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
-  else{value=r2(+F('f-credit').value||0);}
+  else{value=r2(+F('f-credit').value||0);}  /* credit / repay */
   F('c-value').textContent=fN(value)+' ج.م';F('c-net').textContent=fN(r2(value-paid))+' ج.م';}
 function openRow(id){
   editingId=id;const e=id?entries.find(x=>x.id===id):null;
@@ -420,7 +429,7 @@ function openRow(id){
   F('f-price').value=e?(e.price||''):(last?.price||settings.defaultPrice);F('f-bayan').value=e?(e.bayan||''):(last?.bayan||'');
   const g=e?(e.grades||{}):{a1:100};GRADES.forEach(x=>F('g-'+x[0]).value=g[x[0]]||'');
   F('f-taateeq').value=e?(e.taateeq||''):'';F('f-cheque').value=e?(e.cheque||''):'';F('f-cash').value=e?(e.cash||''):'';F('f-notes').value=e?(e.notes||''):'';
-  F('f-credit').value=e&&e.kind==='credit'?(e.value||''):'';
+  F('f-credit').value=e&&(e.kind==='credit'||e.kind==='repay')?(e.value||''):'';
   setMode(e?(e.kind||(+e.weight>0?'load':'pay')):'load');
   F('rowOverlay').classList.add('open');if(!e)setTimeout(()=>F('f-car').focus(),50);
 }
@@ -439,8 +448,8 @@ async function saveRow(){
     if(taateeq+cheque+cash<=0){toast('اكتب المبلغ اللي خده');return;}
     obj={...base,taateeq,cheque,cash};
   }else{
-    const amt=+F('f-credit').value||0;if(amt<=0){toast('اكتب المبلغ اللي ليه');return;}
-    obj={...base,value:r2(amt),bayan:'له'};
+    const amt=+F('f-credit').value||0;if(amt<=0){toast(rowMode==='repay'?'اكتب المبلغ اللي دفعه':'اكتب المبلغ اللي ليه');return;}
+    obj={...base,value:r2(amt),bayan:rowMode==='repay'?'سداد':'له'};
   }
   if(old)obj.id=old.id;
   if(await putEntry(obj)){closeRow();toast(old?'اتعدّل السطر ✓':'اتسجّل السطر ✓');}
