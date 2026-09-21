@@ -49,6 +49,13 @@
   .brand-name{font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:8px}
   .brand-name .dot{width:9px;height:9px;border-radius:2px;background:#e0a34a;transform:rotate(45deg)}
   .hbtn{background:rgba(255,255,255,.14);border:0;color:inherit;height:38px;padding:0 12px;border-radius:10px;font-family:inherit;font-weight:600;font-size:.9rem;cursor:pointer}
+  .hero2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .hero2 .hb{background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px}
+  .hero2 .hb:first-child{border-inline-start:4px solid #ff9a9a}
+  .hero2 .hb:last-child{border-inline-start:4px solid #7fe0a8}
+  .hero2 .label{font-size:.76rem;opacity:.9;font-weight:600}
+  .hero2 .value{font-size:1.55rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.3}
+  .hero2 .value .cur{font-size:.85rem;font-weight:500;opacity:.8;margin-inline-start:4px}
   .hero{margin-top:12px}
   .hero .label{font-size:.8rem;opacity:.85;font-weight:500}
   .hero .value{font-size:2.1rem;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.2}
@@ -164,9 +171,9 @@
       <div class="brand-name"><span class="dot"></span><span id="bizName">كشوف حسابات الخردة</span></div>
       <button class="hbtn" onclick="openSettings()">⚙ الإعدادات</button>
     </div>
-    <div class="hero">
-      <div class="label">إجمالي الباقي لهم على كل الحسابات</div>
-      <div class="value"><span id="heroBal">0</span><span class="cur">ج.م</span></div>
+    <div class="hero2">
+      <div class="hb"><div class="label">عليّا للناس (الباقي لهم)</div><div class="value"><span id="heroOwe">0</span><span class="cur">ج.م</span></div></div>
+      <div class="hb"><div class="label">ليّا عند الناس (وعليهم)</div><div class="value"><span id="heroDue">0</span><span class="cur">ج.م</span></div></div>
     </div>
     <div class="hero-stats">
       <div class="st"><div class="k">عدد الحسابات</div><div class="v" id="hAcc">0</div></div>
@@ -361,7 +368,7 @@ function clearPeriod(){F('p-from').value='';F('p-to').value='';renderLedger();}
 
 /* ---------- render ---------- */
 function renderAll(){renderHero();renderHome();if(curAcc)renderLedger();F('bizName').textContent=settings.name;}
-function renderHero(){let net=0,kg=0,paid=0;accounts.forEach(a=>{const s=accSummary(a.id);net+=s.net;kg+=s.kg;paid+=s.paid;});F('heroBal').textContent=fM(net);F('hAcc').textContent=accounts.length;F('hTon').textContent=fN(kg/1000,2)+' طن';F('hPaid').textContent=fM(paid);}
+function renderHero(){let owe=0,due=0,kg=0,paid=0;accounts.forEach(a=>{const s=accSummary(a.id);if(s.net>0)owe+=s.net;else due+=-s.net;kg+=s.kg;paid+=s.paid;});F('heroOwe').textContent=fM(owe);F('heroDue').textContent=fM(due);F('hAcc').textContent=accounts.length;F('hTon').textContent=fN(kg/1000,2)+' طن';F('hPaid').textContent=fM(paid);}
 function renderHome(){
   const q=(F('search').value||'').trim();
   const list=accounts.filter(a=>!q||(a.name||'').includes(q)).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
