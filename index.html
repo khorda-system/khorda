@@ -7,42 +7,40 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     box-sizing:border-box;
     padding-top:env(safe-area-inset-top,0px);
     padding-bottom:env(safe-area-inset-bottom,0px);
     --bg:#eef1f3; --surface:#fff; --surface-2:#f6f8f9;
-    --ink:#1a2026; --ink-2:#5b6772; --line:#dde3e7;
+    --ink:#1a2026; --ink-2:#5b6772; --line:#d5dce1;
     --brand:#1f4d5c; --brand-ink:#fff;
-    --calc:#9a2b2b; --calc-bg:#fbf1f1;
-    --head:#e9e3d2; --total:#fff3a8;
-    --in:#1f7a44; --out:#a8531a; --warn:#b4232a;
+    --calc:#c0202a; --head:#8faadc; --head-ink:#0f1f3d; --title:#8faadc;
+    --sum:#f3f6fb; --total:#fff3a8;
+    --in:#1f7a44; --warn:#b4232a;
     --shadow:0 1px 2px rgba(20,32,40,.06),0 8px 24px rgba(20,32,40,.06);
   }
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){
       --bg:#12171b;--surface:#1a2127;--surface-2:#212a31;--ink:#eef2f4;--ink-2:#9aa7b0;--line:#2c363e;
-      --brand:#3f8a9e;--brand-ink:#05171c;--calc:#ff9a9a;--calc-bg:#2a1d1d;--head:#2b2f2a;--total:#4a4213;
-      --in:#4bbd7a;--out:#e0965a;--warn:#ff6b71;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+      --brand:#3f8a9e;--brand-ink:#05171c;--calc:#ff8a8a;--head:#2f4a72;--head-ink:#eef2f4;--title:#2f4a72;
+      --sum:#1f2933;--total:#4a4213;--in:#4bbd7a;--warn:#ff6b71;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
     }
-  }
-  :root[data-theme="dark"]{
-    --bg:#12171b;--surface:#1a2127;--surface-2:#212a31;--ink:#eef2f4;--ink-2:#9aa7b0;--line:#2c363e;
-    --brand:#3f8a9e;--brand-ink:#05171c;--calc:#ff9a9a;--calc-bg:#2a1d1d;--head:#2b2f2a;--total:#4a4213;
-    --in:#4bbd7a;--out:#e0965a;--warn:#ff6b71;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
   }
   *{box-sizing:inherit}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
-  .app{max-width:1100px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+  .app{max-width:1240px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
 
   header.top{background:var(--brand);color:var(--brand-ink);padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 16px}
   .top .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .brand-name{font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:8px}
   .brand-name .dot{width:9px;height:9px;border-radius:2px;background:#e0a34a;transform:rotate(45deg)}
   .hbtn{background:rgba(255,255,255,.14);border:0;color:inherit;height:38px;padding:0 12px;border-radius:10px;font-family:inherit;font-weight:600;font-size:.9rem;cursor:pointer}
-  .hbtn:active{transform:scale(.96)}
   .hero{margin-top:12px}
   .hero .label{font-size:.8rem;opacity:.85;font-weight:500}
   .hero .value{font-size:2.1rem;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.2}
@@ -55,10 +53,8 @@
   main{flex:1;padding:14px 12px 40px}
   .view{display:none}.view.active{display:block}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
-  .card .hd{padding:12px 15px;border-bottom:1px solid var(--line);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .card .bd{padding:14px}
-  .toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center}
-  .toolbar input{flex:1}
+  .toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+  .toolbar input[type=search]{flex:1;min-width:160px}
   input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);color:var(--ink);font-family:inherit;font-size:1rem;font-variant-numeric:tabular-nums;-webkit-appearance:none;appearance:none}
   input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
   .btn{border:0;border-radius:12px;padding:12px 16px;font-family:inherit;font-size:.98rem;font-weight:700;cursor:pointer;color:#fff;background:var(--brand);white-space:nowrap}
@@ -67,7 +63,6 @@
   .btn.danger{background:var(--warn)}
   .btn:active{transform:scale(.98)}
 
-  /* accounts list */
   .acc{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer}
   .acc:last-child{border-bottom:0}
   .acc .av{width:42px;height:42px;border-radius:11px;background:var(--surface-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--brand);flex-shrink:0}
@@ -75,21 +70,30 @@
   .acc .n{font-weight:700}
   .acc .s{font-size:.78rem;color:var(--ink-2)}
   .acc .bal{text-align:left;font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem;color:var(--calc)}
+  .acc .bal.owe{color:var(--in)}
   .acc .bal small{display:block;font-weight:500;font-size:.7rem;color:var(--ink-2)}
   .empty{text-align:center;color:var(--ink-2);padding:26px 12px;font-size:.9rem}
 
   /* ledger */
-  .ledger-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .ledger-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .ledger-head .back{background:var(--surface);border:1px solid var(--line);border-radius:10px;height:38px;padding:0 12px;font-family:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
-  .ledger-head h2{margin:0;font-size:1.15rem;flex:1;min-width:120px}
-  .ledger-head h2 span{background:var(--total);padding:2px 10px;border-radius:6px;color:#3b3400}
-  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-  table{border-collapse:separate;border-spacing:0;min-width:1040px;width:100%;font-variant-numeric:tabular-nums;font-size:.86rem}
-  th,td{padding:8px 7px;text-align:center;border-bottom:1px solid var(--line);border-inline-start:1px solid var(--line);white-space:nowrap}
-  th{background:var(--head);font-weight:700;font-size:.8rem;position:sticky;top:0;z-index:2;color:#2c2a22}
-  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) th{color:var(--ink)}}
+  .ledger-head .sp{flex:1}
+  .period{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;font-size:.85rem;color:var(--ink-2)}
+  .period input{width:auto;padding:8px 10px;font-size:.9rem}
+  .statement{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .stitle{background:var(--title);color:var(--head-ink);text-align:center;font-weight:700;font-size:1.25rem;padding:10px}
+  .sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;background:var(--sum);border-bottom:1px solid var(--line)}
+  .sum div{padding:9px 12px;border-inline-start:1px solid var(--line);font-size:.85rem}
+  .sum div:first-child{border-inline-start:0}
+  .sum .k{color:var(--ink-2);font-weight:600;font-size:.74rem;display:block}
+  .sum .v{font-weight:700;font-size:1.05rem;font-variant-numeric:tabular-nums}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{border-collapse:separate;border-spacing:0;min-width:1180px;width:100%;font-variant-numeric:tabular-nums;font-size:.85rem}
+  th,td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line);border-inline-start:1px solid var(--line);white-space:nowrap}
+  th{background:var(--head);color:var(--head-ink);font-weight:700;font-size:.78rem;position:sticky;top:0;z-index:2}
+  th.grp{font-size:.7rem;padding:3px}
   td.c{color:var(--calc);font-weight:600}
-  td.pay{color:var(--in);font-weight:700}
+  td.txt{max-width:130px;overflow:hidden;text-overflow:ellipsis}
   th:first-child,td:first-child{position:sticky;right:0;background:var(--surface);z-index:1;border-inline-start:0;box-shadow:-1px 0 0 var(--line)}
   th:first-child{background:var(--head);z-index:3}
   tr.total td{background:var(--total);font-weight:700;color:#3b3400;border-bottom:0}
@@ -98,7 +102,6 @@
   tbody tr:not(.total):active td{background:var(--surface-2)}
   .hint{font-size:.76rem;color:var(--ink-2);margin:10px 4px 0}
 
-  /* sheet/modal */
   .overlay{position:fixed;inset:0;background:rgba(10,15,18,.55);display:none;align-items:flex-end;justify-content:center;z-index:40}
   .overlay.open{display:flex}
   .sheet{background:var(--surface);width:100%;max-width:760px;border-radius:18px 18px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px);max-height:92vh;overflow:auto}
@@ -107,42 +110,43 @@
   .field label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bottom:5px}
   .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .calcbox{background:var(--calc-bg);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:6px 0 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
-  .calcbox div{display:flex;justify-content:space-between;font-size:.88rem}
+  .g6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .g6 input{padding:9px 6px;font-size:.9rem;text-align:center}
+  .g6 label{font-size:.68rem;text-align:center}
+  .mode{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;margin-bottom:12px}
+  .mode button{flex:1;border:0;background:none;padding:10px 4px;border-radius:9px;font-family:inherit;font-weight:700;color:var(--ink-2);cursor:pointer;font-size:.92rem}
+  .mode button.on{background:var(--brand);color:#fff}
+  .grp-load,.grp-pay,.grp-credit{display:none}
+  .sheet[data-mode="load"] .grp-load,.sheet[data-mode="load"] .grp-pay,.sheet[data-mode="pay"] .grp-pay,.sheet[data-mode="credit"] .grp-credit{display:block}
+  .sheet[data-mode="load"] .g2.grp-load,.sheet[data-mode="load"] .g3.grp-load,.sheet[data-mode="load"] .g6.grp-load,.sheet[data-mode="load"] .g3.grp-pay,.sheet[data-mode="pay"] .g3.grp-pay{display:grid}
+  .sec{font-size:.8rem;font-weight:700;color:var(--brand);margin:10px 0 6px;border-top:1px solid var(--line);padding-top:10px}
+  .calcbox{background:var(--surface-2);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:6px 0 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+  .calcbox div{display:flex;justify-content:space-between;font-size:.9rem}
   .calcbox b{color:var(--calc);font-variant-numeric:tabular-nums}
-  .calcbox .big{grid-column:1/-1;border-top:1px solid var(--line);padding-top:6px;font-size:1rem}
-  .sep{height:1px;background:var(--line);margin:12px 0}
-  .paylabel{font-size:.82rem;font-weight:700;color:var(--in);margin:0 0 6px}
   .rowbtns{display:flex;gap:8px;margin-top:8px}
   .rowbtns .btn{flex:1}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:30px;font-weight:600;font-size:.9rem;opacity:0;transition:.25s;z-index:60;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .sync{font-size:.72rem;color:var(--ink-2);text-align:center;margin-top:10px}
 
-  @media print{
-    header.top,.ledger-head .back,.ledger-head .btn,.hint,.overlay,.toast,#v-home{display:none!important}
-    body{background:#fff;color:#000}main{padding:0}
-    .tablewrap{overflow:visible;border:0}table{min-width:0;font-size:10.5pt}
-    th{position:static;background:#e9e3d2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    tr.total td{background:#fff3a8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    td.c{color:#9a2b2b!important}
-    th:first-child,td:first-child{position:static;box-shadow:none}
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<style>
   .gate{position:fixed;inset:0;background:var(--bg);z-index:80;display:none;align-items:center;justify-content:center;padding:18px}
   .gate.open{display:flex}
   .gate .box{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px;width:100%;max-width:460px}
   .gate h2{margin:0 0 6px;font-size:1.15rem}
   .gate p{margin:0 0 14px;font-size:.85rem;color:var(--ink-2)}
-  .gate textarea{width:100%;min-height:150px;padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);color:var(--ink);font-family:monospace;font-size:.8rem;direction:ltr}
   .gate .err{color:var(--warn);font-size:.82rem;min-height:1.2em;margin:6px 0}
-  .gate .links{margin-top:12px;text-align:center}
-  .gate .links button{background:none;border:0;color:var(--brand);font-family:inherit;font-weight:600;cursor:pointer;font-size:.85rem;text-decoration:underline}
+
+  @media print{
+    header.top,.ledger-head,.period,.hint,.overlay,.toast,#v-home{display:none!important}
+    body{background:#fff;color:#000}main{padding:0}
+    .statement{border:0}.tablewrap{overflow:visible}table{min-width:0;font-size:9.5pt}
+    th{position:static;background:#8faadc!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .stitle{background:#8faadc!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tr.total td{background:#fff3a8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td.c{color:#c0202a!important}
+    th:first-child,td:first-child{position:static;box-shadow:none}
+    @page{size:A4 landscape;margin:10mm}
+  }
 </style>
 </head>
 <body>
@@ -153,38 +157,44 @@
       <button class="hbtn" onclick="openSettings()">⚙ الإعدادات</button>
     </div>
     <div class="hero">
-      <div class="label">إجمالي الباقي على كل الحسابات</div>
-      <div class="value"><span id="heroBal">0</span><span class="cur">ج</span></div>
+      <div class="label">إجمالي الباقي لهم على كل الحسابات</div>
+      <div class="value"><span id="heroBal">0</span><span class="cur">ج.م</span></div>
     </div>
     <div class="hero-stats">
       <div class="st"><div class="k">عدد الحسابات</div><div class="v" id="hAcc">0</div></div>
-      <div class="st"><div class="k">إجمالي الوزن الصافي</div><div class="v" id="hKg">0</div></div>
+      <div class="st"><div class="k">إجمالي الكمية</div><div class="v" id="hTon">0 طن</div></div>
       <div class="st"><div class="k">إجمالي الواصل</div><div class="v" id="hPaid">0</div></div>
     </div>
   </header>
 
   <main>
-    <!-- Accounts list -->
     <section class="view active" id="v-home">
       <div class="toolbar">
         <input type="search" id="search" placeholder="ابحث باسم الحساب…" oninput="renderHome()">
-        <button class="btn ghost" onclick="exportExcel(null)" title="تصدير كل الحسابات">⬇ Excel</button>
+        <button class="btn ghost" onclick="exportExcel(null)">⬇ Excel</button>
         <button class="btn" onclick="openNewAccount()">+ حساب جديد</button>
       </div>
-      <div class="card"><div class="bd" id="accList" style="padding:4px 14px"></div></div>
+      <div class="card" id="accList" style="padding:4px 14px"></div>
     </section>
 
-    <!-- Ledger -->
     <section class="view" id="v-ledger">
       <div class="ledger-head">
         <button class="back" onclick="goHome()">→ الحسابات</button>
-        <h2><span id="ledName"></span></h2>
+        <span class="sp"></span>
         <button class="btn ghost" onclick="exportExcel(curAcc)">⬇ Excel</button>
         <button class="btn ghost" onclick="window.print()">🖨 طباعة</button>
         <button class="btn ghost" onclick="openRenameAccount()">✎</button>
         <button class="btn" onclick="openRow(null)">+ سطر جديد</button>
       </div>
-      <div class="tablewrap"><table id="ledTable"></table></div>
+      <div class="period">
+        <span>الفترة:</span> من <input type="date" id="p-from" onchange="renderLedger()"> إلى <input type="date" id="p-to" onchange="renderLedger()">
+        <button class="btn ghost" style="padding:7px 12px;font-size:.85rem" onclick="clearPeriod()">كل الفترة</button>
+      </div>
+      <div class="statement">
+        <div class="stitle">حساب السيد / <span id="ledName"></span></div>
+        <div class="sum" id="ledSum"></div>
+        <div class="tablewrap"><table id="ledTable"></table></div>
+      </div>
       <p class="hint">اضغط على أي سطر لتعديله أو مسحه. الأرقام الحمرا بتتحسب لوحدها. الجدول بيتزحلق يمين وشمال على الموبايل.</p>
     </section>
   </main>
@@ -192,38 +202,56 @@
 
 <!-- Row editor -->
 <div class="overlay" id="rowOverlay">
-  <div class="sheet">
+  <div class="sheet" id="rowSheet" data-mode="load">
     <h3><span id="rowTitle">سطر جديد</span><button class="btn ghost" style="padding:6px 12px" onclick="closeRow()">✕</button></h3>
+    <div class="mode" id="modeSeg">
+      <button data-m="load" class="on" onclick="setMode('load')">🚛 نقلة</button>
+      <button data-m="pay" onclick="setMode('pay')">💸 خد فلوس</button>
+      <button data-m="credit" onclick="setMode('credit')">➕ ليه فلوس</button>
+    </div>
     <div class="g2">
       <div class="field"><label>التاريخ</label><input type="date" id="f-date"></div>
-      <div class="field"><label>السيارة</label><input type="text" inputmode="numeric" id="f-car" placeholder="رقم العربية"></div>
+      <div class="field grp-load"><label>السيارة</label><input type="text" inputmode="numeric" id="f-car" placeholder="رقم العربية"></div>
     </div>
-    <div class="g3">
-      <div class="field"><label>قائم</label><input type="number" inputmode="decimal" id="f-gross" placeholder="0" oninput="onWeights()"></div>
-      <div class="field"><label>فارغ</label><input type="number" inputmode="decimal" id="f-tare" placeholder="0" oninput="onWeights()"></div>
-      <div class="field"><label>وزن</label><input type="number" inputmode="decimal" id="f-weight" placeholder="0" oninput="calcRow()"></div>
+    <div class="grp-credit">
+      <div class="field"><label>المبلغ اللي ليه (ج.م)</label><input type="number" inputmode="decimal" id="f-credit" placeholder="0" oninput="calcRow()"></div>
     </div>
-    <div class="g3">
-      <div class="field"><label>خصم (كجم)</label><input type="number" inputmode="decimal" id="f-deduct" placeholder="0" oninput="calcRow()"></div>
-      <div class="field"><label>السعر</label><input type="number" inputmode="decimal" step="0.1" id="f-price" placeholder="22" oninput="calcRow()"></div>
-      <div class="field"><label>تعتيق (ج)</label><input type="number" inputmode="decimal" id="f-taateeq" placeholder="0" oninput="calcRow()"></div>
+    <div class="g3 grp-load">
+      <div class="field"><label>قائم <span style="font-weight:400">(اختياري)</span></label><input type="number" inputmode="decimal" id="f-gross" placeholder="0" oninput="onWeights()"></div>
+      <div class="field"><label>فارغ <span style="font-weight:400">(اختياري)</span></label><input type="number" inputmode="decimal" id="f-tare" placeholder="0" oninput="onWeights()"></div>
+      <div class="field"><label>الوزن (كجم)</label><input type="number" inputmode="decimal" id="f-weight" placeholder="0" oninput="calcRow()"></div>
     </div>
+    <div class="g2 grp-load">
+      <div class="field"><label>السعر (ج/كجم)</label><input type="number" inputmode="decimal" step="0.1" id="f-price" placeholder="24.5" oninput="calcRow()"></div>
+      <div class="field"><label>البيان</label><input type="text" id="f-bayan" list="bayanList" placeholder="مثلاً: العز"><datalist id="bayanList"></datalist></div>
+    </div>
+    <div class="sec grp-load">التقدير (نسبة %)</div>
+    <div class="g6 grp-load">
+      <div class="field"><label>A1 مميز</label><input type="number" inputmode="numeric" id="g-a1" placeholder="0"></div>
+      <div class="field"><label>A2 خفيف</label><input type="number" inputmode="numeric" id="g-a2" placeholder="0"></div>
+      <div class="field"><label>A3 ثالث</label><input type="number" inputmode="numeric" id="g-a3" placeholder="0"></div>
+      <div class="field"><label>B</label><input type="number" inputmode="numeric" id="g-b" placeholder="0"></div>
+      <div class="field"><label>D</label><input type="number" inputmode="numeric" id="g-d" placeholder="0"></div>
+      <div class="field"><label>SH</label><input type="number" inputmode="numeric" id="g-sh" placeholder="0"></div>
+    </div>
+    <div class="sec grp-pay">المدفوع / الخصومات</div>
+    <div class="g3 grp-pay">
+      <div class="field"><label>تعتيق</label><input type="number" inputmode="decimal" id="f-taateeq" placeholder="0" oninput="calcRow()"></div>
+      <div class="field"><label>شيكات</label><input type="number" inputmode="decimal" id="f-cheque" placeholder="0" oninput="calcRow()"></div>
+      <div class="field"><label>نقدي</label><input type="number" inputmode="decimal" id="f-cash" placeholder="0" oninput="calcRow()"></div>
+    </div>
+    <div class="field"><label>ملاحظات</label><input type="text" id="f-notes" placeholder="مثلاً: تحويل أبناء فاب"></div>
     <div class="calcbox">
-      <div><span>وزن صافي</span><b id="c-net">0</b></div>
-      <div><span>الإجمالي</span><b id="c-total">0</b></div>
-      <div class="big"><span>بعد التعتيق</span><b id="c-after">0</b></div>
+      <div><span id="c-vlabel">قيمة النقلة</span><b id="c-value">0</b></div>
+      <div><span>الباقي له</span><b id="c-net">0</b></div>
     </div>
-    <div class="sep"></div>
-    <p class="paylabel">واصل (المبلغ المدفوع في السطر ده)</p>
-    <div class="field"><input type="number" inputmode="decimal" id="f-paid" placeholder="0"></div>
     <div class="rowbtns">
-      <button class="btn full" id="rowSave" onclick="saveRow()">حفظ السطر</button>
+      <button class="btn full" onclick="saveRow()">حفظ السطر</button>
       <button class="btn danger" id="rowDel" style="display:none;flex:0 0 auto" onclick="deleteRow()">مسح</button>
     </div>
   </div>
 </div>
 
-<!-- Account editor -->
 <div class="overlay" id="accOverlay">
   <div class="sheet">
     <h3><span id="accTitle">حساب جديد</span><button class="btn ghost" style="padding:6px 12px" onclick="closeAcc()">✕</button></h3>
@@ -236,7 +264,6 @@
   </div>
 </div>
 
-<!-- Settings -->
 <div class="overlay" id="setOverlay">
   <div class="sheet">
     <h3><span>الإعدادات</span><button class="btn ghost" style="padding:6px 12px" onclick="document.getElementById('setOverlay').classList.remove('open')">✕</button></h3>
@@ -247,239 +274,175 @@
   </div>
 </div>
 
-<!-- Setup gate -->
-<div class="gate" id="setupGate">
-  <div class="box">
-    <h2>ربط السيستم بقاعدة البيانات</h2>
-    <p>الصق هنا كود <b>firebaseConfig</b> اللي هتاخده من موقع Firebase (الخطوات في الرسالة). بتعملها مرة واحدة على كل جهاز.</p>
-    <textarea id="cfgText" placeholder='const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "...",
-  projectId: "...",
-  ...
-};'></textarea>
-    <div class="err" id="cfgErr"></div>
-    <button class="btn full" onclick="applyConfig()">اربط وابدأ</button>
-    <div class="links"><button onclick="useLocalOnly()">استخدمه على الجهاز ده بس من غير ربط</button></div>
-  </div>
-</div>
-<!-- Login gate -->
+<div class="gate" id="setupGate"><div class="box"><h2>مشكلة في التحميل</h2><p id="cfgErr" class="err"></p><button class="btn full" onclick="location.reload()">إعادة المحاولة</button></div></div>
 <div class="gate" id="loginGate">
   <div class="box">
     <h2>تسجيل الدخول</h2>
-    <p>ادخل بالإيميل والباسورد اللي عملتهم في Firebase.</p>
+    <p>ادخل بالإيميل والباسورد بتوع السيستم.</p>
     <div class="field"><label>الإيميل</label><input type="email" id="lg-email" style="direction:ltr" autocomplete="username"></div>
     <div class="field"><label>الباسورد</label><input type="password" id="lg-pass" style="direction:ltr" autocomplete="current-password"></div>
     <div class="err" id="lgErr"></div>
     <button class="btn full" onclick="doLogin()">دخول</button>
-    <div class="links"><button onclick="resetConfig()">تغيير الربط</button></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+const DEFAULT_CFG={apiKey:"AIzaSyAg4hNL35mQmYhdsun2KLMv3el3-rbjJoo",authDomain:"khorda-14af4.firebaseapp.com",projectId:"khorda-14af4",storageBucket:"khorda-14af4.firebasestorage.app",messagingSenderId:"895827676158",appId:"1:895827676158:web:b7813ae50ba89ad97bceaf"};
+const MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const GRADES=[['a1','A1 مميز'],['a2','A2 خفيف'],['a3','A3 ثالث'],['b','B'],['d','D'],['sh','SH']];
 const fN=(n,d=0)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:d}).format(Math.round((+n||0)*100)/100);
 const fM=n=>fN(n,2);
 const fW=n=>{const v=+n||0;return Number.isInteger(v)?String(v):fN(v,1);};
+const r2=n=>Math.round((+n||0)*100)/100;
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-const fDate=s=>{if(!s)return '';const p=s.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s;};
+const fDateAr=s=>{if(!s)return '';const p=s.split('-');return p.length===3?`${+p[2]}-${MONTHS[+p[1]-1]||p[1]}`:s;};
+const fDateNum=s=>{if(!s)return '—';const p=s.split('-');return p.length===3?`${p[0]}/${p[1]}/${p[2]}`:s;};
 const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const F=id=>document.getElementById(id);
 
-const DEFAULT_CFG={apiKey:"AIzaSyAg4hNL35mQmYhdsun2KLMv3el3-rbjJoo",authDomain:"khorda-14af4.firebaseapp.com",projectId:"khorda-14af4",storageBucket:"khorda-14af4.firebasestorage.app",messagingSenderId:"895827676158",appId:"1:895827676158:web:b7813ae50ba89ad97bceaf"};
 let db=null,myId=null,usingCloud=false,fbAuth=null;
 let accounts=[],entries=[];
-let settings={name:'كشوف حسابات الخردة',defaultPrice:22};
-let curAcc=null,editingId=null,editingAccId=null;
+let settings={name:'كشوف حسابات الخردة',defaultPrice:24.5};
+let curAcc=null,editingId=null,editingAccId=null,rowMode='load';
 
-/* ---------- storage: Firebase (shared) OR local fallback ---------- */
-const LS='scrapLedger_v1', LSCFG='scrapLedger_fbcfg', LSLOCAL='scrapLedger_localonly';
+/* ---------- storage ---------- */
+const LS='scrapLedger_v2';
 function loadLocal(){try{const r=JSON.parse(localStorage.getItem(LS)||'{}');accounts=r.accounts||[];entries=r.entries||[];if(r.settings)settings=Object.assign(settings,r.settings);}catch(e){}}
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({accounts,entries,settings}));}catch(e){}}
 const uid=()=>'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-
-function parseConfig(txt){
-  const cfg={};const re=/(apiKey|authDomain|projectId|storageBucket|messagingSenderId|appId|measurementId)\s*[:=]\s*["']([^"']+)["']/g;let m;
-  while((m=re.exec(txt)))cfg[m[1]]=m[2];
-  return (cfg.apiKey&&cfg.projectId&&cfg.appId)?cfg:null;
-}
-function applyConfig(){
-  const cfg=parseConfig(document.getElementById('cfgText').value);
-  if(!cfg){document.getElementById('cfgErr').textContent='الكود مش مظبوط — تأكد إنك نسخت الـ firebaseConfig كله';return;}
-  localStorage.setItem(LSCFG,JSON.stringify(cfg));localStorage.removeItem(LSLOCAL);location.reload();
-}
-function useLocalOnly(){localStorage.setItem(LSLOCAL,'1');location.reload();}
-function resetConfig(){if(confirm('تغيّر ربط قاعدة البيانات؟')){localStorage.removeItem(LSCFG);localStorage.removeItem(LSLOCAL);location.reload();}}
-async function doLogin(){
-  const em=document.getElementById('lg-email').value.trim(),pw=document.getElementById('lg-pass').value;
-  document.getElementById('lgErr').textContent='';
-  try{await fbAuth.signInWithEmailAndPassword(em,pw);}
-  catch(e){document.getElementById('lgErr').textContent='الإيميل أو الباسورد غلط';}
-}
+async function doLogin(){const em=F('lg-email').value.trim(),pw=F('lg-pass').value;F('lgErr').textContent='';try{await fbAuth.signInWithEmailAndPassword(em,pw);}catch(e){F('lgErr').textContent='الإيميل أو الباسورد غلط';}}
 async function doLogout(){if(fbAuth){await fbAuth.signOut();location.reload();}}
-
 async function initStore(){
-  let cfg=null;try{cfg=JSON.parse(localStorage.getItem(LSCFG)||'null');}catch(e){}
-  const localOnly=localStorage.getItem(LSLOCAL)==='1';
-  if(localOnly){loadLocal();usingCloud=false;renderAll();setSync();return;}
-  if(!cfg)cfg=DEFAULT_CFG;
-  if(typeof firebase==='undefined'){document.getElementById('cfgErr').textContent='مكتبة Firebase محمّلتش — نزّل الملف وافتحه في Chrome مع نت شغال (مش من جوه Claude)';document.getElementById('setupGate').classList.add('open');return;}
+  if(typeof firebase==='undefined'){F('cfgErr').textContent='مكتبة Firebase محمّلتش — تأكد من النت وحاول تاني';F('setupGate').classList.add('open');return;}
   try{
-    firebase.initializeApp(cfg);
-    fbAuth=firebase.auth();
-    const fs=firebase.firestore();
+    firebase.initializeApp(DEFAULT_CFG);fbAuth=firebase.auth();const fs=firebase.firestore();
     try{await fs.enablePersistence({synchronizeTabs:true});}catch(e){}
     fbAuth.onAuthStateChanged(u=>{
-      if(!u){document.getElementById('loginGate').classList.add('open');return;}
-      document.getElementById('loginGate').classList.remove('open');
-      myId=u.uid;db=fs;usingCloud=true;
-      db.doc('settings/main').onSnapshot(s=>{if(s.exists){const d=s.data();settings={name:d.name||settings.name,defaultPrice:+d.defaultPrice||22};}renderAll();});
+      if(!u){F('loginGate').classList.add('open');return;}
+      F('loginGate').classList.remove('open');myId=u.uid;db=fs;usingCloud=true;
+      db.doc('settings/main').onSnapshot(s=>{if(s.exists){const d=s.data();settings={name:d.name||settings.name,defaultPrice:+d.defaultPrice||24.5};}renderAll();});
       db.collection('accounts').onSnapshot(q=>{accounts=q.docs.map(d=>({id:d.id,...d.data()}));renderAll();});
-      db.collection('entries').onSnapshot(q=>{entries=q.docs.map(d=>({id:d.id,...d.data()}));renderAll();},e=>toast('مشكلة في تحميل البيانات'));
+      db.collection('entries').onSnapshot(q=>{entries=q.docs.map(d=>norm({id:d.id,...d.data()}));renderAll();},e=>toast('مشكلة في تحميل البيانات'));
       setSync();
     });
-  }catch(e){document.getElementById('cfgErr').textContent='فشل الربط: '+e.message;localStorage.removeItem(LSCFG);document.getElementById('setupGate').classList.add('open');}
+  }catch(e){F('cfgErr').textContent='فشل الربط: '+e.message;F('setupGate').classList.add('open');}
 }
-function setSync(){const n=document.getElementById('syncNote');n.innerHTML=usingCloud?'✓ متصل بقاعدة البيانات — كل الأجهزة بتشوف نفس الأرقام <br><button class="btn ghost" style="margin-top:8px;padding:8px 14px" onclick="doLogout()">تسجيل خروج</button> <button class="btn ghost" style="margin-top:8px;padding:8px 14px" onclick="resetConfig()">تغيير الربط</button>':'يعمل على هذا الجهاز فقط <br><button class="btn ghost" style="margin-top:8px;padding:8px 14px" onclick="resetConfig()">ربط بقاعدة بيانات</button>';}
-
+function setSync(){F('syncNote').innerHTML=usingCloud?'✓ متصل بقاعدة البيانات — كل الأجهزة بتشوف نفس الأرقام <br><button class="btn ghost" style="margin-top:8px;padding:8px 14px" onclick="doLogout()">تسجيل خروج</button>':'يعمل على هذا الجهاز فقط';}
 function strip(o){const {id,...d}=o;return d;}
-async function putAccount(obj){
-  if(db){try{if(obj.id)await db.doc('accounts/'+obj.id).set(strip(obj));else await db.collection('accounts').add(obj);return true;}catch(e){toast('تعذّر الحفظ');return false;}}
-  if(obj.id){accounts=accounts.map(a=>a.id===obj.id?obj:a);}else{obj.id=uid();accounts.push(obj);}
-  saveLocal();renderAll();return true;
-}
-async function removeAccount(id){
-  if(db){try{await db.doc('accounts/'+id).delete();return true;}catch(e){toast('تعذّر المسح');return false;}}
-  accounts=accounts.filter(a=>a.id!==id);saveLocal();renderAll();return true;
-}
-async function putEntry(obj){
-  if(db){try{if(obj.id)await db.doc('entries/'+obj.id).set(strip(obj));else await db.collection('entries').add(obj);return true;}catch(e){toast('تعذّر الحفظ');return false;}}
-  if(obj.id){entries=entries.map(x=>x.id===obj.id?obj:x);}else{obj.id=uid();entries.push(obj);}
-  saveLocal();renderAll();return true;
-}
-async function removeEntry(id){
-  if(db){try{await db.doc('entries/'+id).delete();return true;}catch(e){toast('تعذّر المسح');return false;}}
-  entries=entries.filter(x=>x.id!==id);saveLocal();renderAll();return true;
-}
-async function persistSettings(){
-  if(db){try{await db.doc('settings/main').set(settings);}catch(e){toast('تعذّر الحفظ');}}else saveLocal();
-}
+async function putAccount(obj){if(db){try{if(obj.id)await db.doc('accounts/'+obj.id).set(strip(obj));else await db.collection('accounts').add(obj);return true;}catch(e){toast('تعذّر الحفظ');return false;}}if(obj.id){accounts=accounts.map(a=>a.id===obj.id?obj:a);}else{obj.id=uid();accounts.push(obj);}saveLocal();renderAll();return true;}
+async function removeAccount(id){if(db){try{await db.doc('accounts/'+id).delete();return true;}catch(e){toast('تعذّر المسح');return false;}}accounts=accounts.filter(a=>a.id!==id);saveLocal();renderAll();return true;}
+async function putEntry(obj){if(db){try{if(obj.id)await db.doc('entries/'+obj.id).set(strip(obj));else await db.collection('entries').add(obj);return true;}catch(e){toast('تعذّر الحفظ');return false;}}if(obj.id){entries=entries.map(x=>x.id===obj.id?obj:x);}else{obj.id=uid();entries.push(obj);}saveLocal();renderAll();return true;}
+async function removeEntry(id){if(db){try{await db.doc('entries/'+id).delete();return true;}catch(e){toast('تعذّر المسح');return false;}}entries=entries.filter(x=>x.id!==id);saveLocal();renderAll();return true;}
+async function persistSettings(){if(db){try{await db.doc('settings/main').set(settings);}catch(e){toast('تعذّر الحفظ');}}else saveLocal();}
 
-/* ---------- calc ---------- */
-function calcFields(gross,tare,weightIn,deduct,price,taateeq){
-  const weight=(gross>0)?(gross-tare):(+weightIn||0);
-  const net=Math.max(weight-(+deduct||0),0);
-  const total=net*(+price||0);
-  const after=total-(+taateeq||0);
-  return {weight,net,total,after};
+/* ---------- data model (v2) + migration of old rows ---------- */
+function norm(e){
+  if(e.v===2)return e;
+  const weight=+e.net||+e.weight||0,price=+e.price||0;
+  return {...e,v:2,kind:weight>0?'load':'pay',weight,price,value:+e.total||r2(weight*price),taateeq:+e.taateeq||0,cheque:0,cash:+e.paid||0,bayan:e.bayan||'',notes:e.party||'',grades:e.grades||(weight>0?{a1:100}:{})};
 }
-function accEntries(accId){
-  return entries.filter(e=>e.acc===accId).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.ts||0)-(b.ts||0));
-}
-function accSummary(accId){
-  let bal=0,kg=0,paid=0,total=0,after=0,weight=0;
-  accEntries(accId).forEach(e=>{bal+=(+e.after||0)-(+e.paid||0);kg+=+e.net||0;weight+=+e.weight||0;paid+=+e.paid||0;total+=+e.total||0;after+=+e.after||0;});
-  return {bal,kg,weight,paid,total,after};
-}
+const netOf=e=>r2((+e.value||0)-(+e.taateeq||0)-(+e.cheque||0)-(+e.cash||0));
+function accEntries(id){return entries.filter(e=>e.acc===id).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.ts||0)-(b.ts||0));}
+function summarize(rows){let kg=0,value=0,paid=0,taateeq=0,cheque=0,cash=0;rows.forEach(e=>{kg+=+e.weight||0;value+=+e.value||0;taateeq+=+e.taateeq||0;cheque+=+e.cheque||0;cash+=+e.cash||0;});paid=taateeq+cheque+cash;return {kg,value:r2(value),paid:r2(paid),taateeq:r2(taateeq),cheque:r2(cheque),cash:r2(cash),net:r2(value-paid),from:rows[0]?.date||'',to:rows[rows.length-1]?.date||''};}
+const accSummary=id=>summarize(accEntries(id));
+function periodRows(id){const f=F('p-from').value,t=F('p-to').value;return accEntries(id).filter(e=>(!f||e.date>=f)&&(!t||e.date<=t));}
+function clearPeriod(){F('p-from').value='';F('p-to').value='';renderLedger();}
 
 /* ---------- render ---------- */
-function renderAll(){renderHero();renderHome();if(curAcc)renderLedger();document.getElementById('bizName').textContent=settings.name;}
-function renderHero(){
-  let bal=0,kg=0,paid=0;
-  accounts.forEach(a=>{const s=accSummary(a.id);bal+=s.bal;kg+=s.kg;paid+=s.paid;});
-  document.getElementById('heroBal').textContent=fM(bal);
-  document.getElementById('hAcc').textContent=accounts.length;
-  document.getElementById('hKg').textContent=fN(kg)+' كجم';
-  document.getElementById('hPaid').textContent=fM(paid);
-}
+function renderAll(){renderHero();renderHome();if(curAcc)renderLedger();F('bizName').textContent=settings.name;}
+function renderHero(){let net=0,kg=0,paid=0;accounts.forEach(a=>{const s=accSummary(a.id);net+=s.net;kg+=s.kg;paid+=s.paid;});F('heroBal').textContent=fM(net);F('hAcc').textContent=accounts.length;F('hTon').textContent=fN(kg/1000,2)+' طن';F('hPaid').textContent=fM(paid);}
 function renderHome(){
-  const q=(document.getElementById('search').value||'').trim();
+  const q=(F('search').value||'').trim();
   const list=accounts.filter(a=>!q||(a.name||'').includes(q)).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
-  const el=document.getElementById('accList');
+  const el=F('accList');
   if(!accounts.length){el.innerHTML='<div class="empty">لسه مفيش حسابات<br><span style="font-size:.8rem;opacity:.8">اضغط «+ حساب جديد» وابدأ بأول اسم</span></div>';return;}
   if(!list.length){el.innerHTML='<div class="empty">مفيش حساب بالاسم ده</div>';return;}
-  el.innerHTML=list.map(a=>{const s=accSummary(a.id);const n=accEntries(a.id).length;const last=accEntries(a.id).slice(-1)[0];
-    return `<div class="acc" onclick="openLedger('${a.id}')"><div class="av">${esc((a.name||'؟').trim()[0])}</div><div class="mid"><div class="n">${esc(a.name)}</div><div class="s">${n} سطر${last?' · آخر حركة '+fDate(last.date):''}${a.note?' · '+esc(a.note):''}</div></div><div class="bal">${fM(s.bal)}<small>باقي</small></div></div>`;}).join('');
+  el.innerHTML=list.map(a=>{const s=accSummary(a.id);const n=accEntries(a.id).length;
+    return `<div class="acc" onclick="openLedger('${a.id}')"><div class="av">${esc((a.name||'؟').trim()[0])}</div><div class="mid"><div class="n">${esc(a.name)}</div><div class="s">${n} سطر · ${fN(s.kg/1000,2)} طن${s.to?' · آخر حركة '+fDateAr(s.to):''}${a.note?' · '+esc(a.note):''}</div></div><div class="bal ${s.net<0?'owe':''}">${fM(Math.abs(s.net))}<small>${s.net<0?'وعليه':'الباقي له'}</small></div></div>`;}).join('');
 }
 function renderLedger(){
   const a=accounts.find(x=>x.id===curAcc);if(!a){goHome();return;}
-  document.getElementById('ledName').textContent=a.name;
-  const rows=accEntries(curAcc);let bal=0;
-  const head=`<thead><tr><th>التاريخ</th><th>السيارة</th><th>قائم</th><th>فارغ</th><th>وزن</th><th>خصم</th><th>وزن صافي</th><th>السعر</th><th>الإجمالي</th><th>تعتيق</th><th>بعد التعتيق</th><th>واصل</th><th>باقي</th></tr></thead>`;
-  const body=rows.map(e=>{bal+=(+e.after||0)-(+e.paid||0);const isPay=!(+e.weight>0);
-    const cell=(v,c='',isW=false)=>`<td class="${c}">${v===''||v==null||v===0?(isPay&&c==='c'?'0':'')  :(isW?fW(v):fM(v))}</td>`;
-    return `<tr onclick="openRow('${e.id}')"><td>${fDate(e.date)}</td><td>${isPay?'واصل':esc(e.car||'')}</td>${cell(e.gross,'',true)}${cell(e.tare,'',true)}${cell(e.weight,'c',true)}${cell(e.deduct,'',true)}${cell(e.net,'c',true)}<td>${e.price?fN(e.price,2):''}</td>${cell(e.total,'c')}${cell(e.taateeq,'',true)}${cell(e.after,'c')}<td class="pay">${e.paid?fM(e.paid):''}</td><td class="c">${fM(bal)}</td></tr>`;}).join('');
-  const s=accSummary(curAcc);
-  const tot=`<tr class="total"><td>الإجمالي</td><td></td><td></td><td></td><td>${fW(s.weight)}</td><td></td><td>${fW(s.kg)}</td><td></td><td>${fM(s.total)}</td><td></td><td>${fM(s.after)}</td><td>${fM(s.paid)}</td><td>${fM(s.bal)}</td></tr>`;
-  document.getElementById('ledTable').innerHTML=head+'<tbody>'+(rows.length?body:'<tr><td colspan="13" class="empty">لسه مفيش سطور في الحساب ده — اضغط «+ سطر جديد»</td></tr>')+tot+'</tbody>';
+  F('ledName').textContent=a.name;
+  const rows=periodRows(curAcc),s=summarize(rows);
+  F('ledSum').innerHTML=`<div><span class="k">من</span><span class="v">${fDateNum(s.from)}</span></div><div><span class="k">إلى</span><span class="v">${fDateNum(s.to)}</span></div><div><span class="k">إجمالي الكمية</span><span class="v">${fN(s.kg/1000,2)} طن</span></div><div><span class="k">قيمة البضاعة</span><span class="v">${fM(s.value)} ج.م</span></div><div><span class="k">الواصل له</span><span class="v">${fM(s.paid)} ج.م</span></div><div><span class="k">الباقي له</span><span class="v" style="color:var(--calc)">${fM(Math.max(s.net,0))} ج.م</span></div><div><span class="k">وعليه</span><span class="v">${fM(Math.max(-s.net,0))} ج.م</span></div>`;
+  const head=`<thead><tr><th rowspan="2">التاريخ</th><th rowspan="2">السيارة</th><th rowspan="2">الوزن</th><th rowspan="2">السعر</th><th colspan="6" class="grp">التقدير</th><th rowspan="2">تعتيق</th><th rowspan="2">شيكات</th><th rowspan="2">نقدي</th><th rowspan="2">ملاحظات</th><th rowspan="2">البيان</th><th rowspan="2">قيمة النقلة</th><th rowspan="2">الباقي له</th></tr><tr>${GRADES.map(g=>`<th class="grp">${g[1]}</th>`).join('')}</tr></thead>`;
+  const c=v=>(+v?fW(v):'');
+  const body=rows.map(e=>{const g=e.grades||{};const isPay=!(+e.weight>0);
+    return `<tr onclick="openRow('${e.id}')"><td>${fDateAr(e.date)}</td><td>${esc(e.car||'')}</td><td>${c(e.weight)}</td><td>${isPay?'':fN(e.price,2)}</td>${GRADES.map(x=>`<td>${c(g[x[0]])}</td>`).join('')}<td>${+e.taateeq?fN(e.taateeq):''}</td><td>${+e.cheque?fN(e.cheque):''}</td><td>${+e.cash?fN(e.cash):''}</td><td class="txt">${esc(e.notes||'')}</td><td class="c txt">${e.kind==='credit'?esc(e.bayan||'له'):(isPay?'0':esc(e.bayan||''))}</td><td class="c">${fN(e.value)}</td><td class="c">${fN(netOf(e))}</td></tr>`;}).join('');
+  const tot=`<tr class="total"><td>الإجمالي</td><td></td><td>${fW(s.kg)}</td><td></td><td colspan="6"></td><td>${fN(s.taateeq)}</td><td>${fN(s.cheque)}</td><td>${fN(s.cash)}</td><td></td><td></td><td>${fN(s.value)}</td><td>${fN(s.net)}</td></tr>`;
+  F('ledTable').innerHTML=head+'<tbody>'+(rows.length?body:'<tr><td colspan="17" class="empty">لسه مفيش سطور — اضغط «+ سطر جديد»</td></tr>')+tot+'</tbody>';
 }
-
 
 /* ---------- Excel export ---------- */
 function safeSheetName(n,used){let s=String(n||'حساب').replace(/[\[\]\:\*\?\/\\]/g,' ').trim().slice(0,28)||'حساب';let b=s,i=2;while(used.has(s)){s=b.slice(0,25)+' '+i++;}used.add(s);return s;}
-function ledgerAOA(a){
-  const H=['التاريخ','السيارة','قائم','فارغ','وزن','خصم','وزن صافي','السعر','الإجمالي','تعتيق','بعد التعتيق','واصل','باقي'];
-  const rows=[[a.name],H];let bal=0;const n=v=>(+v||0)||null;
-  accEntries(a.id).forEach(e=>{bal+=(+e.after||0)-(+e.paid||0);const isPay=!(+e.weight>0);
-    rows.push([fDate(e.date),isPay?'واصل':(e.car||''),n(e.gross),n(e.tare),n(e.weight),n(e.deduct),n(e.net),isPay?null:n(e.price),isPay?0:(+e.total||0),n(e.taateeq),isPay?0:(+e.after||0),n(e.paid),Math.round(bal*100)/100]);});
-  const s=accSummary(a.id);
-  rows.push(['الإجمالي','','','',s.weight,'',s.kg,'',s.total,'',s.after,s.paid,Math.round(s.bal*100)/100]);
-  return rows;
+function ledgerAOA(a,rows){
+  const s=summarize(rows);const n=v=>(+v||0)||null;
+  const out=[['حساب السيد / '+a.name],['من',fDateNum(s.from),'إلى',fDateNum(s.to),'إجمالي الكمية (طن)',r2(s.kg/1000),'قيمة البضاعة',s.value,'الواصل له',s.paid,'الباقي له',Math.max(s.net,0),'وعليه',Math.max(-s.net,0)],
+    ['التاريخ','السيارة','الوزن','السعر',...GRADES.map(g=>g[1]),'تعتيق','شيكات','نقدي','ملاحظات','البيان','قيمة النقلة','الباقي له']];
+  rows.forEach(e=>{const g=e.grades||{};const isPay=!(+e.weight>0);out.push([fDateAr(e.date),e.car||'',n(e.weight),isPay?null:n(e.price),...GRADES.map(x=>n(g[x[0]])),n(e.taateeq),n(e.cheque),n(e.cash),e.notes||'',isPay?0:(e.bayan||''),+e.value||0,netOf(e)]);});
+  out.push(['الإجمالي','',s.kg,'','','','','','','',s.taateeq,s.cheque,s.cash,'','',s.value,s.net]);
+  return out;
 }
 function exportExcel(accId){
   if(typeof XLSX==='undefined'){toast('مكتبة Excel محمّلتش — تأكد من النت');return;}
   const list=accId?accounts.filter(a=>a.id===accId):[...accounts].sort((x,y)=>(x.name||'').localeCompare(y.name||'','ar'));
   if(!list.length){toast('مفيش حسابات للتصدير');return;}
   const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};const used=new Set();
-  if(!accId){
-    const sum=[['الحساب','عدد السطور','إجمالي الوزن الصافي','إجمالي بعد التعتيق','إجمالي الواصل','الباقي']];
-    let tb=0;list.forEach(a=>{const s=accSummary(a.id);tb+=s.bal;sum.push([a.name,accEntries(a.id).length,s.kg,s.after,s.paid,Math.round(s.bal*100)/100]);});
-    sum.push(['الإجمالي','','','','',Math.round(tb*100)/100]);
-    const ws=XLSX.utils.aoa_to_sheet(sum);ws['!cols']=[{wch:22},{wch:12},{wch:18},{wch:18},{wch:16},{wch:14}];
-    XLSX.utils.book_append_sheet(wb,ws,safeSheetName('الملخص',used));
-  }
-  list.forEach(a=>{const ws=XLSX.utils.aoa_to_sheet(ledgerAOA(a));
-    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:12}}];
-    ws['!cols']=[{wch:12},{wch:9},{wch:8},{wch:8},{wch:8},{wch:7},{wch:10},{wch:7},{wch:12},{wch:8},{wch:13},{wch:11},{wch:12}];
-    XLSX.utils.book_append_sheet(wb,ws,safeSheetName(a.name,used));});
-  const fname=(accId?('كشف-'+(list[0].name||'حساب')):'كشوف-الخردة')+'-'+todayStr()+'.xlsx';
-  XLSX.writeFile(wb,fname);toast('اتصدّر ملف Excel ✓');
+  if(!accId){const sum=[['الحساب','عدد السطور','الكمية (طن)','قيمة البضاعة','الواصل له','الباقي له','وعليه']];let tn=0;
+    list.forEach(a=>{const s=accSummary(a.id);tn+=s.net;sum.push([a.name,accEntries(a.id).length,r2(s.kg/1000),s.value,s.paid,Math.max(s.net,0),Math.max(-s.net,0)]);});
+    sum.push(['الإجمالي','','','','',r2(tn),'']);const ws=XLSX.utils.aoa_to_sheet(sum);ws['!cols']=[{wch:22},{wch:10},{wch:12},{wch:16},{wch:14},{wch:14},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,safeSheetName('الملخص',used));}
+  list.forEach(a=>{const rows=accId?periodRows(a.id):accEntries(a.id);const ws=XLSX.utils.aoa_to_sheet(ledgerAOA(a,rows));ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:16}}];ws['!cols']=[{wch:11},{wch:8},{wch:9},{wch:7},{wch:7},{wch:7},{wch:7},{wch:5},{wch:5},{wch:5},{wch:10},{wch:11},{wch:10},{wch:14},{wch:10},{wch:12},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,safeSheetName(a.name,used));});
+  XLSX.writeFile(wb,(accId?('كشف-'+(list[0].name||'حساب')):'كشوف-الخردة')+'-'+todayStr()+'.xlsx');toast('اتصدّر ملف Excel ✓');
 }
 
 /* ---------- navigation ---------- */
-function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');window.scrollTo(0,0);}
-function openLedger(id){curAcc=id;renderLedger();show('ledger');}
+function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));F('v-'+v).classList.add('active');window.scrollTo(0,0);}
+function openLedger(id){curAcc=id;F('p-from').value='';F('p-to').value='';renderLedger();show('ledger');}
 function goHome(){curAcc=null;show('home');}
 
 /* ---------- row editor ---------- */
-const F=id=>document.getElementById(id);
-function onWeights(){const g=+F('f-gross').value||0,t=+F('f-tare').value||0;if(g>0){F('f-weight').value=Math.max(g-t,0);}calcRow();}
-function calcRow(){
-  const r=calcFields(+F('f-gross').value||0,+F('f-tare').value||0,+F('f-weight').value||0,+F('f-deduct').value||0,+F('f-price').value||0,+F('f-taateeq').value||0);
-  F('c-net').textContent=fW(r.net)+' كجم';F('c-total').textContent=fM(r.total)+' ج';F('c-after').textContent=fM(r.after)+' ج';
-}
+function onWeights(){const g=+F('f-gross').value||0,t=+F('f-tare').value||0;if(g>0)F('f-weight').value=Math.max(g-t,0);calcRow();}
+function setMode(m){rowMode=m;F('rowSheet').dataset.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));F('c-vlabel').textContent=m==='credit'?'المبلغ له':'قيمة النقلة';calcRow();}
+function calcRow(){let value=0,paid=0;
+  if(rowMode==='load'){value=r2((+F('f-weight').value||0)*(+F('f-price').value||0));paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
+  else if(rowMode==='pay'){paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
+  else{value=r2(+F('f-credit').value||0);}
+  F('c-value').textContent=fN(value)+' ج.م';F('c-net').textContent=fN(r2(value-paid))+' ج.م';}
 function openRow(id){
   editingId=id;const e=id?entries.find(x=>x.id===id):null;
   F('rowTitle').textContent=e?'تعديل سطر':'سطر جديد';F('rowDel').style.display=e?'block':'none';
-  const rows=accEntries(curAcc);const lastPrice=[...rows].reverse().find(x=>x.price)?.price||settings.defaultPrice;
-  F('f-date').value=e?e.date:todayStr();F('f-car').value=e?(e.car||''):(rows.slice(-1)[0]?.car||'');
+  const rows=accEntries(curAcc);const last=[...rows].reverse().find(x=>+x.weight>0);
+  F('bayanList').innerHTML=[...new Set(entries.map(x=>x.bayan).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');
+  F('f-date').value=e?e.date:todayStr();F('f-car').value=e?(e.car||''):'';
   F('f-gross').value=e?(e.gross||''):'';F('f-tare').value=e?(e.tare||''):'';F('f-weight').value=e?(e.weight||''):'';
-  F('f-deduct').value=e?(e.deduct||''):'';F('f-price').value=e?(e.price||''):lastPrice;F('f-taateeq').value=e?(e.taateeq||''):'';
-  F('f-paid').value=e?(e.paid||''):'';
-  calcRow();F('rowOverlay').classList.add('open');
-  if(!e)setTimeout(()=>F('f-gross').focus(),50);
+  F('f-price').value=e?(e.price||''):(last?.price||settings.defaultPrice);F('f-bayan').value=e?(e.bayan||''):(last?.bayan||'');
+  const g=e?(e.grades||{}):{a1:100};GRADES.forEach(x=>F('g-'+x[0]).value=g[x[0]]||'');
+  F('f-taateeq').value=e?(e.taateeq||''):'';F('f-cheque').value=e?(e.cheque||''):'';F('f-cash').value=e?(e.cash||''):'';F('f-notes').value=e?(e.notes||''):'';
+  F('f-credit').value=e&&e.kind==='credit'?(e.value||''):'';
+  setMode(e?(e.kind||(+e.weight>0?'load':'pay')):'load');
+  F('rowOverlay').classList.add('open');if(!e)setTimeout(()=>F('f-car').focus(),50);
 }
 function closeRow(){F('rowOverlay').classList.remove('open');editingId=null;}
 async function saveRow(){
-  const gross=+F('f-gross').value||0,tare=+F('f-tare').value||0,weightIn=+F('f-weight').value||0;
-  const deduct=+F('f-deduct').value||0,price=+F('f-price').value||0,taateeq=+F('f-taateeq').value||0,paid=+F('f-paid').value||0;
-  const r=calcFields(gross,tare,weightIn,deduct,price,taateeq);
-  if(r.weight<=0&&paid<=0){toast('اكتب وزن أو مبلغ واصل');return;}
-  if(r.weight>0&&price<=0){toast('اكتب السعر');return;}
   const old=editingId?entries.find(x=>x.id===editingId):null;
-  const obj={id:editingId||undefined,acc:curAcc,ts:old?old.ts:Date.now(),date:F('f-date').value||todayStr(),car:F('f-car').value.trim(),
-    gross,tare,weight:r.weight,deduct,net:r.net,price:r.weight>0?price:0,total:r.total,taateeq,after:r.after,paid,by:old?old.by:(myId||null)};
-  if(!obj.id)delete obj.id;
+  const base={v:2,kind:rowMode,acc:curAcc,ts:old?old.ts:Date.now(),date:F('f-date').value||todayStr(),notes:F('f-notes').value.trim(),by:old?old.by:(myId||null),car:'',gross:0,tare:0,weight:0,price:0,value:0,grades:{},taateeq:0,cheque:0,cash:0,bayan:''};
+  let obj;
+  if(rowMode==='load'){
+    const weight=+F('f-weight').value||0,price=+F('f-price').value||0;
+    if(weight<=0){toast('اكتب الوزن');return;}if(price<=0){toast('اكتب السعر');return;}
+    const grades={};GRADES.forEach(x=>{const v=+F('g-'+x[0]).value||0;if(v)grades[x[0]]=v;});
+    obj={...base,car:F('f-car').value.trim(),gross:+F('f-gross').value||0,tare:+F('f-tare').value||0,weight,price,value:r2(weight*price),grades,taateeq:+F('f-taateeq').value||0,cheque:+F('f-cheque').value||0,cash:+F('f-cash').value||0,bayan:F('f-bayan').value.trim()};
+  }else if(rowMode==='pay'){
+    const taateeq=+F('f-taateeq').value||0,cheque=+F('f-cheque').value||0,cash=+F('f-cash').value||0;
+    if(taateeq+cheque+cash<=0){toast('اكتب المبلغ اللي خده');return;}
+    obj={...base,taateeq,cheque,cash};
+  }else{
+    const amt=+F('f-credit').value||0;if(amt<=0){toast('اكتب المبلغ اللي ليه');return;}
+    obj={...base,value:r2(amt),bayan:'له'};
+  }
+  if(old)obj.id=old.id;
   if(await putEntry(obj)){closeRow();toast(old?'اتعدّل السطر ✓':'اتسجّل السطر ✓');}
 }
 async function deleteRow(){if(!editingId)return;if(!confirm('تمسح السطر ده؟'))return;if(await removeEntry(editingId)){closeRow();toast('اتمسح');}}
@@ -488,22 +451,12 @@ async function deleteRow(){if(!editingId)return;if(!confirm('تمسح السطر
 function openNewAccount(){editingAccId=null;F('accTitle').textContent='حساب جديد';F('accDel').style.display='none';F('a-name').value='';F('a-note').value='';F('accOverlay').classList.add('open');setTimeout(()=>F('a-name').focus(),50);}
 function openRenameAccount(){const a=accounts.find(x=>x.id===curAcc);if(!a)return;editingAccId=a.id;F('accTitle').textContent='تعديل الحساب';F('accDel').style.display='block';F('a-name').value=a.name||'';F('a-note').value=a.note||'';F('accOverlay').classList.add('open');}
 function closeAcc(){F('accOverlay').classList.remove('open');}
-async function saveAccount(){
-  const name=F('a-name').value.trim();if(!name){toast('اكتب اسم الحساب');return;}
-  const old=editingAccId?accounts.find(x=>x.id===editingAccId):null;
-  const obj={name,note:F('a-note').value.trim(),createdAt:old?old.createdAt:Date.now()};if(old)obj.id=old.id;
-  if(await putAccount(obj)){closeAcc();toast('اتحفظ ✓');}
-}
-async function deleteAccount(){
-  if(!editingAccId)return;const n=accEntries(editingAccId).length;
-  if(n>0){toast('امسح سطور الحساب الأول ('+n+' سطر)');return;}
-  if(!confirm('تمسح الحساب ده؟'))return;
-  if(await removeAccount(editingAccId)){closeAcc();goHome();toast('اتمسح الحساب');}
-}
+async function saveAccount(){const name=F('a-name').value.trim();if(!name){toast('اكتب اسم الحساب');return;}const old=editingAccId?accounts.find(x=>x.id===editingAccId):null;const obj={name,note:F('a-note').value.trim(),createdAt:old?old.createdAt:Date.now()};if(old)obj.id=old.id;if(await putAccount(obj)){closeAcc();toast('اتحفظ ✓');}}
+async function deleteAccount(){if(!editingAccId)return;const n=accEntries(editingAccId).length;if(n>0){toast('امسح سطور الحساب الأول ('+n+' سطر)');return;}if(!confirm('تمسح الحساب ده؟'))return;if(await removeAccount(editingAccId)){closeAcc();goHome();toast('اتمسح الحساب');}}
 
 /* ---------- settings ---------- */
 function openSettings(){F('set-name').value=settings.name;F('set-price').value=settings.defaultPrice;setSync();F('setOverlay').classList.add('open');}
-async function saveSettings(){settings={name:F('set-name').value.trim()||'كشوف حسابات الخردة',defaultPrice:+F('set-price').value||22};await persistSettings();renderAll();F('setOverlay').classList.remove('open');toast('اتحفظت الإعدادات ✓');}
+async function saveSettings(){settings={name:F('set-name').value.trim()||'كشوف حسابات الخردة',defaultPrice:+F('set-price').value||24.5};await persistSettings();renderAll();F('setOverlay').classList.remove('open');toast('اتحفظت الإعدادات ✓');}
 
 let toastT;function toast(m){const t=F('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1900);}
 document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{if(e.target===o)o.classList.remove('open');});
