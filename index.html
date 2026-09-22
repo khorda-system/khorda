@@ -103,7 +103,7 @@
   .sum .k{color:var(--ink-2);font-weight:600;font-size:.74rem;display:block}
   .sum .v{font-weight:700;font-size:1.05rem;font-variant-numeric:tabular-nums}
   .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{border-collapse:separate;border-spacing:0;min-width:1180px;width:100%;font-variant-numeric:tabular-nums;font-size:.85rem}
+  table{border-collapse:separate;border-spacing:0;min-width:1300px;width:100%;font-variant-numeric:tabular-nums;font-size:.85rem}
   th,td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line);border-inline-start:1px solid var(--line);white-space:nowrap}
   th{background:var(--head);color:var(--head-ink);font-weight:700;font-size:.78rem;position:sticky;top:0;z-index:2}
   th.grp{font-size:.7rem;padding:3px}
@@ -132,6 +132,7 @@
   .mode button{flex:1;border:0;background:none;padding:10px 4px;border-radius:9px;font-family:inherit;font-weight:700;color:var(--ink-2);cursor:pointer;font-size:.92rem}
   .mode button.on{background:var(--brand);color:#fff}
   .grp-load,.grp-pay,.grp-credit{display:none}
+  .sheet[data-mode="load"] .calcbox .grp-load{display:flex}
   .sheet[data-mode="load"] .grp-load,.sheet[data-mode="load"] .grp-pay,.sheet[data-mode="pay"] .grp-pay,.sheet[data-mode="credit"] .grp-credit,.sheet[data-mode="repay"] .grp-credit{display:block}
   .sheet[data-mode="load"] .g2.grp-load,.sheet[data-mode="load"] .g3.grp-load,.sheet[data-mode="load"] .g6.grp-load,.sheet[data-mode="load"] .g3.grp-pay,.sheet[data-mode="pay"] .g3.grp-pay{display:grid}
   .sec{font-size:.8rem;font-weight:700;color:var(--brand);margin:10px 0 6px;border-top:1px solid var(--line);padding-top:10px}
@@ -237,7 +238,8 @@
       <div class="field"><label>فارغ <span style="font-weight:400">(اختياري)</span></label><input type="number" inputmode="decimal" id="f-tare" placeholder="0" oninput="onWeights()"></div>
       <div class="field"><label>الوزن (كجم)</label><input type="number" inputmode="decimal" id="f-weight" placeholder="0" oninput="calcRow()"></div>
     </div>
-    <div class="g2 grp-load">
+    <div class="g3 grp-load">
+      <div class="field"><label>خصم (كجم)</label><input type="number" inputmode="decimal" id="f-deduct" placeholder="0" oninput="calcRow()"></div>
       <div class="field"><label>السعر (ج/كجم)</label><input type="number" inputmode="decimal" step="0.1" id="f-price" placeholder="24.5" oninput="calcRow()"></div>
       <div class="field"><label>البيان</label><input type="text" id="f-bayan" list="bayanList" placeholder="مثلاً: العز"><datalist id="bayanList"></datalist></div>
     </div>
@@ -258,6 +260,7 @@
     </div>
     <div class="field"><label>ملاحظات</label><input type="text" id="f-notes" placeholder="مثلاً: تحويل أبناء فاب"></div>
     <div class="calcbox">
+      <div class="grp-load"><span>وزن صافي</span><b id="c-netw">0</b></div>
       <div><span id="c-vlabel">قيمة النقلة</span><b id="c-value">0</b></div>
       <div><span>الباقي له</span><b id="c-net">0</b></div>
     </div>
@@ -355,13 +358,13 @@ async function persistSettings(){if(db){try{await db.doc('settings/main').set(se
 
 /* ---------- data model (v2) + migration of old rows ---------- */
 function norm(e){
-  if(e.v===2)return e;
-  const weight=+e.net||+e.weight||0,price=+e.price||0;
-  return {...e,v:2,kind:weight>0?'load':'pay',weight,price,value:+e.total||r2(weight*price),taateeq:+e.taateeq||0,cheque:0,cash:+e.paid||0,bayan:e.bayan||'',notes:e.party||'',grades:e.grades||(weight>0?{a1:100}:{})};
+  if(e.v===2){if(e.netw==null){e.deduct=+e.deduct||0;e.netw=Math.max((+e.weight||0)-e.deduct,0);}return e;}
+  const weight=+e.weight||+e.net||0,deduct=+e.deduct||0,netw=+e.net||Math.max(weight-deduct,0),price=+e.price||0;
+  return {...e,v:2,kind:weight>0?'load':'pay',weight,deduct,netw,price,value:+e.total||r2(netw*price),taateeq:+e.taateeq||0,cheque:0,cash:+e.paid||0,bayan:e.bayan||'',notes:e.party||'',grades:e.grades||(weight>0?{a1:100}:{})};
 }
 const netOf=e=>r2((+e.value||0)-(+e.taateeq||0)-(+e.cheque||0)-(+e.cash||0));
 function accEntries(id){return entries.filter(e=>e.acc===id).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.ts||0)-(b.ts||0));}
-function summarize(rows){let kg=0,value=0,paid=0,taateeq=0,cheque=0,cash=0;rows.forEach(e=>{kg+=+e.weight||0;value+=+e.value||0;taateeq+=+e.taateeq||0;cheque+=+e.cheque||0;cash+=+e.cash||0;});paid=taateeq+cheque+cash;return {kg,value:r2(value),paid:r2(paid),taateeq:r2(taateeq),cheque:r2(cheque),cash:r2(cash),net:r2(value-paid),from:rows[0]?.date||'',to:rows[rows.length-1]?.date||''};}
+function summarize(rows){let kg=0,gross=0,deduct=0,value=0,paid=0,taateeq=0,cheque=0,cash=0;rows.forEach(e=>{kg+=+e.netw||0;gross+=+e.weight||0;deduct+=+e.deduct||0;value+=+e.value||0;taateeq+=+e.taateeq||0;cheque+=+e.cheque||0;cash+=+e.cash||0;});paid=taateeq+cheque+cash;return {kg,gross,deduct,value:r2(value),paid:r2(paid),taateeq:r2(taateeq),cheque:r2(cheque),cash:r2(cash),net:r2(value-paid),from:rows[0]?.date||'',to:rows[rows.length-1]?.date||''};}
 const accSummary=id=>summarize(accEntries(id));
 function periodRows(id){const f=F('p-from').value,t=F('p-to').value;return accEntries(id).filter(e=>(!f||e.date>=f)&&(!t||e.date<=t));}
 function clearPeriod(){F('p-from').value='';F('p-to').value='';renderLedger();}
@@ -383,12 +386,12 @@ function renderLedger(){
   F('ledName').textContent=a.name;
   const rows=periodRows(curAcc),s=summarize(rows);
   F('ledSum').innerHTML=`<div><span class="k">من</span><span class="v">${fDateNum(s.from)}</span></div><div><span class="k">إلى</span><span class="v">${fDateNum(s.to)}</span></div><div><span class="k">إجمالي الكمية</span><span class="v">${fN(s.kg/1000,2)} طن</span></div><div><span class="k">قيمة البضاعة</span><span class="v">${fM(s.value)} ج.م</span></div><div><span class="k">الواصل له</span><span class="v">${fM(s.paid)} ج.م</span></div><div><span class="k">الباقي له</span><span class="v" style="color:var(--calc)">${fM(Math.max(s.net,0))} ج.م</span></div><div><span class="k">وعليه</span><span class="v">${fM(Math.max(-s.net,0))} ج.م</span></div>`;
-  const head=`<thead><tr><th rowspan="2">التاريخ</th><th rowspan="2">السيارة</th><th rowspan="2">الوزن</th><th rowspan="2">السعر</th><th colspan="6" class="grp">التقدير</th><th rowspan="2">تعتيق</th><th rowspan="2">شيكات</th><th rowspan="2">نقدي</th><th rowspan="2">ملاحظات</th><th rowspan="2">البيان</th><th rowspan="2">قيمة النقلة</th><th rowspan="2">الباقي له</th></tr><tr>${GRADES.map(g=>`<th class="grp">${g[1]}</th>`).join('')}</tr></thead>`;
+  const head=`<thead><tr><th rowspan="2">التاريخ</th><th rowspan="2">السيارة</th><th rowspan="2">الوزن</th><th rowspan="2">خصم</th><th rowspan="2">وزن صافي</th><th rowspan="2">السعر</th><th colspan="6" class="grp">التقدير</th><th rowspan="2">تعتيق</th><th rowspan="2">شيكات</th><th rowspan="2">نقدي</th><th rowspan="2">ملاحظات</th><th rowspan="2">البيان</th><th rowspan="2">قيمة النقلة</th><th rowspan="2">الباقي له</th></tr><tr>${GRADES.map(g=>`<th class="grp">${g[1]}</th>`).join('')}</tr></thead>`;
   const c=v=>(+v?fW(v):'');
   const body=rows.map(e=>{const g=e.grades||{};const isPay=!(+e.weight>0);
-    return `<tr onclick="openRow('${e.id}')"><td>${fDateAr(e.date)}</td><td>${esc(e.car||'')}</td><td>${c(e.weight)}</td><td>${isPay?'':fN(e.price,2)}</td>${GRADES.map(x=>`<td>${c(g[x[0]])}</td>`).join('')}<td>${+e.taateeq?fN(e.taateeq):''}</td><td>${+e.cheque?fN(e.cheque):''}</td><td>${+e.cash?fN(e.cash):''}</td><td class="txt">${esc(e.notes||'')}</td><td class="c txt">${(e.kind==='credit'||e.kind==='repay')?esc(e.bayan||(e.kind==='repay'?'سداد':'له')):(isPay?'0':esc(e.bayan||''))}</td><td class="c">${fN(e.value)}</td><td class="c">${fN(netOf(e))}</td></tr>`;}).join('');
-  const tot=`<tr class="total"><td>الإجمالي</td><td></td><td>${fW(s.kg)}</td><td></td><td colspan="6"></td><td>${fN(s.taateeq)}</td><td>${fN(s.cheque)}</td><td>${fN(s.cash)}</td><td></td><td></td><td>${fN(s.value)}</td><td>${fN(s.net)}</td></tr>`;
-  F('ledTable').innerHTML=head+'<tbody>'+(rows.length?body:'<tr><td colspan="17" class="empty">لسه مفيش سطور — اضغط «+ سطر جديد»</td></tr>')+tot+'</tbody>';
+    return `<tr onclick="openRow('${e.id}')"><td>${fDateAr(e.date)}</td><td>${esc(e.car||'')}</td><td>${c(e.weight)}</td><td>${c(e.deduct)}</td><td class="c">${c(e.netw)}</td><td>${isPay?'':fN(e.price,2)}</td>${GRADES.map(x=>`<td>${c(g[x[0]])}</td>`).join('')}<td>${+e.taateeq?fN(e.taateeq):''}</td><td>${+e.cheque?fN(e.cheque):''}</td><td>${+e.cash?fN(e.cash):''}</td><td class="txt">${esc(e.notes||'')}</td><td class="c txt">${(e.kind==='credit'||e.kind==='repay')?esc(e.bayan||(e.kind==='repay'?'سداد':'له')):(isPay?'0':esc(e.bayan||''))}</td><td class="c">${fN(e.value)}</td><td class="c">${fN(netOf(e))}</td></tr>`;}).join('');
+  const tot=`<tr class="total"><td>الإجمالي</td><td></td><td>${fW(s.gross)}</td><td>${fW(s.deduct)}</td><td>${fW(s.kg)}</td><td></td><td colspan="6"></td><td>${fN(s.taateeq)}</td><td>${fN(s.cheque)}</td><td>${fN(s.cash)}</td><td></td><td></td><td>${fN(s.value)}</td><td>${fN(s.net)}</td></tr>`;
+  F('ledTable').innerHTML=head+'<tbody>'+(rows.length?body:'<tr><td colspan="19" class="empty">لسه مفيش سطور — اضغط «+ سطر جديد»</td></tr>')+tot+'</tbody>';
 }
 
 /* ---------- Excel export ---------- */
@@ -396,9 +399,9 @@ function safeSheetName(n,used){let s=String(n||'حساب').replace(/[\[\]\:\*\?\
 function ledgerAOA(a,rows){
   const s=summarize(rows);const n=v=>(+v||0)||null;
   const out=[['حساب السيد / '+a.name],['من',fDateNum(s.from),'إلى',fDateNum(s.to),'إجمالي الكمية (طن)',r2(s.kg/1000),'قيمة البضاعة',s.value,'الواصل له',s.paid,'الباقي له',Math.max(s.net,0),'وعليه',Math.max(-s.net,0)],
-    ['التاريخ','السيارة','الوزن','السعر',...GRADES.map(g=>g[1]),'تعتيق','شيكات','نقدي','ملاحظات','البيان','قيمة النقلة','الباقي له']];
-  rows.forEach(e=>{const g=e.grades||{};const isPay=!(+e.weight>0);out.push([fDateAr(e.date),e.car||'',n(e.weight),isPay?null:n(e.price),...GRADES.map(x=>n(g[x[0]])),n(e.taateeq),n(e.cheque),n(e.cash),e.notes||'',isPay?0:(e.bayan||''),+e.value||0,netOf(e)]);});
-  out.push(['الإجمالي','',s.kg,'','','','','','','',s.taateeq,s.cheque,s.cash,'','',s.value,s.net]);
+    ['التاريخ','السيارة','الوزن','خصم','وزن صافي','السعر',...GRADES.map(g=>g[1]),'تعتيق','شيكات','نقدي','ملاحظات','البيان','قيمة النقلة','الباقي له']];
+  rows.forEach(e=>{const g=e.grades||{};const isPay=!(+e.weight>0);out.push([fDateAr(e.date),e.car||'',n(e.weight),n(e.deduct),n(e.netw),isPay?null:n(e.price),...GRADES.map(x=>n(g[x[0]])),n(e.taateeq),n(e.cheque),n(e.cash),e.notes||'',isPay?0:(e.bayan||''),+e.value||0,netOf(e)]);});
+  out.push(['الإجمالي','',s.gross,s.deduct,s.kg,'','','','','','','',s.taateeq,s.cheque,s.cash,'','',s.value,s.net]);
   return out;
 }
 function exportExcel(accId){
@@ -409,7 +412,7 @@ function exportExcel(accId){
   if(!accId){const sum=[['الحساب','عدد السطور','الكمية (طن)','قيمة البضاعة','الواصل له','الباقي له','وعليه']];let tn=0;
     list.forEach(a=>{const s=accSummary(a.id);tn+=s.net;sum.push([a.name,accEntries(a.id).length,r2(s.kg/1000),s.value,s.paid,Math.max(s.net,0),Math.max(-s.net,0)]);});
     sum.push(['الإجمالي','','','','',r2(tn),'']);const ws=XLSX.utils.aoa_to_sheet(sum);ws['!cols']=[{wch:22},{wch:10},{wch:12},{wch:16},{wch:14},{wch:14},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,safeSheetName('الملخص',used));}
-  list.forEach(a=>{const rows=accId?periodRows(a.id):accEntries(a.id);const ws=XLSX.utils.aoa_to_sheet(ledgerAOA(a,rows));ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:16}}];ws['!cols']=[{wch:11},{wch:8},{wch:9},{wch:7},{wch:7},{wch:7},{wch:7},{wch:5},{wch:5},{wch:5},{wch:10},{wch:11},{wch:10},{wch:14},{wch:10},{wch:12},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,safeSheetName(a.name,used));});
+  list.forEach(a=>{const rows=accId?periodRows(a.id):accEntries(a.id);const ws=XLSX.utils.aoa_to_sheet(ledgerAOA(a,rows));ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:18}}];ws['!cols']=[{wch:11},{wch:8},{wch:9},{wch:7},{wch:9},{wch:7},{wch:7},{wch:7},{wch:7},{wch:5},{wch:5},{wch:5},{wch:10},{wch:11},{wch:10},{wch:14},{wch:10},{wch:12},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,safeSheetName(a.name,used));});
   XLSX.writeFile(wb,(accId?('كشف-'+(list[0].name||'حساب')):'كشوف-الخردة')+'-'+todayStr()+'.xlsx');toast('اتصدّر ملف Excel ✓');
 }
 
@@ -422,7 +425,7 @@ function goHome(){curAcc=null;show('home');}
 function onWeights(){const g=+F('f-gross').value||0,t=+F('f-tare').value||0;if(g>0)F('f-weight').value=Math.max(g-t,0);calcRow();}
 function setMode(m){rowMode=m;F('rowSheet').dataset.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));F('c-vlabel').textContent=m==='credit'?'المبلغ له':(m==='repay'?'المبلغ المسدّد':'قيمة النقلة');F('creditLabel').textContent=m==='repay'?'المبلغ اللي دفعه لنا (ج.م)':'المبلغ اللي ليه (ج.م)';calcRow();}
 function calcRow(){let value=0,paid=0;
-  if(rowMode==='load'){value=r2((+F('f-weight').value||0)*(+F('f-price').value||0));paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
+  if(rowMode==='load'){const nw=Math.max((+F('f-weight').value||0)-(+F('f-deduct').value||0),0);F('c-netw').textContent=fW(nw)+' كجم';value=r2(nw*(+F('f-price').value||0));paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
   else if(rowMode==='pay'){paid=(+F('f-taateeq').value||0)+(+F('f-cheque').value||0)+(+F('f-cash').value||0);}
   else{value=r2(+F('f-credit').value||0);}  /* credit / repay */
   F('c-value').textContent=fN(value)+' ج.م';F('c-net').textContent=fN(r2(value-paid))+' ج.م';}
@@ -432,7 +435,7 @@ function openRow(id){
   const rows=accEntries(curAcc);const last=[...rows].reverse().find(x=>+x.weight>0);
   F('bayanList').innerHTML=[...new Set(entries.map(x=>x.bayan).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');
   F('f-date').value=e?e.date:todayStr();F('f-car').value=e?(e.car||''):'';
-  F('f-gross').value=e?(e.gross||''):'';F('f-tare').value=e?(e.tare||''):'';F('f-weight').value=e?(e.weight||''):'';
+  F('f-gross').value=e?(e.gross||''):'';F('f-tare').value=e?(e.tare||''):'';F('f-weight').value=e?(e.weight||''):'';F('f-deduct').value=e?(e.deduct||''):'';
   F('f-price').value=e?(e.price||''):(last?.price||settings.defaultPrice);F('f-bayan').value=e?(e.bayan||''):(last?.bayan||'');
   const g=e?(e.grades||{}):{a1:100};GRADES.forEach(x=>F('g-'+x[0]).value=g[x[0]]||'');
   F('f-taateeq').value=e?(e.taateeq||''):'';F('f-cheque').value=e?(e.cheque||''):'';F('f-cash').value=e?(e.cash||''):'';F('f-notes').value=e?(e.notes||''):'';
@@ -449,7 +452,8 @@ async function saveRow(){
     const weight=+F('f-weight').value||0,price=+F('f-price').value||0;
     if(weight<=0){toast('اكتب الوزن');return;}if(price<=0){toast('اكتب السعر');return;}
     const grades={};GRADES.forEach(x=>{const v=+F('g-'+x[0]).value||0;if(v)grades[x[0]]=v;});
-    obj={...base,car:F('f-car').value.trim(),gross:+F('f-gross').value||0,tare:+F('f-tare').value||0,weight,price,value:r2(weight*price),grades,taateeq:+F('f-taateeq').value||0,cheque:+F('f-cheque').value||0,cash:+F('f-cash').value||0,bayan:F('f-bayan').value.trim()};
+    const deduct=+F('f-deduct').value||0,netw=Math.max(weight-deduct,0);
+    obj={...base,car:F('f-car').value.trim(),gross:+F('f-gross').value||0,tare:+F('f-tare').value||0,weight,deduct,netw,price,value:r2(netw*price),grades,taateeq:+F('f-taateeq').value||0,cheque:+F('f-cheque').value||0,cash:+F('f-cash').value||0,bayan:F('f-bayan').value.trim()};
   }else if(rowMode==='pay'){
     const taateeq=+F('f-taateeq').value||0,cheque=+F('f-cheque').value||0,cash=+F('f-cash').value||0;
     if(taateeq+cheque+cash<=0){toast('اكتب المبلغ اللي خده');return;}
